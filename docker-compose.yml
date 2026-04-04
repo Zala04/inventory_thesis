@@ -1,0 +1,70 @@
+services:
+
+  db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ./database/inventorySchema.sql:/docker-entrypoint-initdb.d/inventorySchema.sql
+    ports:
+        - "${DB_PORT}:${DB_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s       # How often to run the check
+      timeout: 3s        # How long to wait before considering it failed
+      retries: 5         # How many times to retry before marking unhealthy
+      start_period: 5s   # Grace period before starting health checks
+
+  server:
+    image: node:24-slim
+    working_dir: /app
+    command: npm start
+    ports:
+      - 3001:3001
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: node:24-slim
+    working_dir: /app
+    command: npm start
+    ports:
+      - 5173:5173
+    volumes:
+      - ./frontend:/app
+    environment:
+      VITE_BASE_URL: http://192.168.8.129:3001
+    depends_on:
+      - server
+
+  ingestion:
+    build:
+      context: RCode
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ./RCode:/app
+      # - ./RCode/lib:/usr/local/lib/R/site-library
+    depends_on:
+      db:
+        condition: service_healthy
+  
+  # public_proxy:
+  #   image: ghcr.io/rathole-org/rathole:dev
+  #   command: /client.toml
+  #   volumes:
+  #     - ./public_proxy/client.toml:/client.toml
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy

@@ -1,0 +1,14 @@
+[client]
+remote_addr = "example.com:2333"
+
+[client.services.postgres]
+local_addr = "db:5432"
+token = "postgres"
+
+[client.services.ui]
+local_addr = "frontend:3000"
+token = "ui"
+
+[client.services.server]
+local_addr = "backend:3001"
+token = "server"
