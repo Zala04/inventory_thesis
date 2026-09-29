@@ -1,4 +1,3 @@
-Student Name: Sorin 
 Project Title: Time Series Forecasting for Stockout Prediction in a Tile Inventory System Using Synthetic Sales Data
 
 
